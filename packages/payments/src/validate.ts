@@ -1,4 +1,4 @@
-import type { PaymentRequest } from './types';
+import type { PaymentRequest } from './types.ts';
 
 /** Vérifie une demande avant de l'envoyer à un prestataire. */
 export function assertValidRequest(request: PaymentRequest): void {

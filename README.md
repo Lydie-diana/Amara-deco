@@ -45,3 +45,19 @@ Ces vérifications tournent aussi sur chaque pull request (GitHub Actions).
 Deux projets Supabase : **dev** (« amara-dev ») et **prod** (nnqnrrsgqxzzesdwvigh).
 Chaque migration de `supabase/migrations` est appliquée d'abord en dev, vérifiée, puis en prod.
 Les apps lisent `.env.development` en local et `.env.production` pour les builds (voir `.env.example`).
+
+## Paiement
+
+Le paiement passe par la fonction Supabase `payments` (`supabase/functions/payments`), qui utilise
+l'interface de `packages/payments`. Secrets de la fonction (jamais dans le code) :
+
+| Secret                   | Dev    | Prod                     |
+| ------------------------ | ------ | ------------------------ |
+| `PAYMENT_PROVIDER`       | `mock` | `honelia`                |
+| `HONELIA_PAY_BASE_URL`   | —      | URL de l'API Honelia Pay |
+| `HONELIA_PAY_SECRET_KEY` | —      | clé secrète Honelia Pay  |
+
+Le prestataire peut aussi être choisi par le réglage serveur `payment_provider` de la base
+(table `private.server_settings`, lisible par le serveur seulement) ; le secret a priorité.
+Sans l'un ni l'autre, la fonction refuse tout paiement. Le prestataire `mock` valide les
+paiements sans argent réel : il ne doit jamais être activé en prod.

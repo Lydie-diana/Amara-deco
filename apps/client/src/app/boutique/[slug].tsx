@@ -1,8 +1,8 @@
-import { useMerchant } from '@amara/api';
+import { useMerchant, useSession, useStartConversation } from '@amara/api';
 import { archTint, BackButton, ProductRow, QueryState, ServiceRow, Tabs } from '@amara/features';
 import { useTranslation } from '@amara/i18n';
-import { Arch, Screen, space, Text } from '@amara/ui';
-import { Stack, useLocalSearchParams } from 'expo-router';
+import { Arch, Button, Screen, space, Text } from '@amara/ui';
+import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { View } from 'react-native';
 
@@ -10,7 +10,16 @@ export default function Shop() {
   const { slug = '' } = useLocalSearchParams<{ slug: string }>();
   const { t } = useTranslation('catalog');
   const query = useMerchant(slug);
+  const { t: tm } = useTranslation('messages');
   const [tab, setTab] = useState<'products' | 'services'>('products');
+  const { session } = useSession();
+  const startConversation = useStartConversation();
+  const contact = (merchantId: string) => {
+    if (!session) return router.push('/connexion');
+    startConversation.mutate(merchantId, {
+      onSuccess: (id) => router.push({ pathname: '/messages/[id]', params: { id } }),
+    });
+  };
 
   return (
     <Screen>
@@ -35,6 +44,12 @@ export default function Shop() {
                     {data.merchant.bio}
                   </Text>
                 ) : null}
+                <Button
+                  label={tm('contactShop')}
+                  variant="secondary"
+                  loading={startConversation.isPending}
+                  onPress={() => contact(data.merchant.id)}
+                />
               </View>
               <Tabs
                 value={tab}
@@ -51,7 +66,15 @@ export default function Shop() {
                   <Text tone="muted">{t('noProducts')}</Text>
                 )
               ) : data.services.length ? (
-                data.services.map((s) => <ServiceRow key={s.id} service={s} />)
+                data.services.map((s) => (
+                  <ServiceRow
+                    key={s.id}
+                    service={s}
+                    onPress={() =>
+                      router.push({ pathname: '/reservation/[service]', params: { service: s.id } })
+                    }
+                  />
+                ))
               ) : (
                 <Text tone="muted">{t('noServices')}</Text>
               )}

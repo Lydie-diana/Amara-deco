@@ -1,0 +1,11 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2022", "DOM"],
+    "types": [],
+    "paths": {
+      "npm:@supabase/supabase-js@2.119.0": ["../../node_modules/@supabase/supabase-js"]
+    }
+  },
+  "include": ["**/*.ts"]
+}

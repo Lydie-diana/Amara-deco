@@ -321,6 +321,15 @@ importers:
         specifier: '*'
         version: 5.11.1(react-native@0.88.1(@babel/core@7.29.13)(@react-native/metro-config@0.88.1(@babel/core@7.29.13))(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)
 
+  supabase/functions:
+    devDependencies:
+      '@amara/payments':
+        specifier: workspace:*
+        version: link:../../packages/payments
+      '@supabase/supabase-js':
+        specifier: ^2.119.0
+        version: 2.119.0
+
 packages:
 
   2g@1.0.1:

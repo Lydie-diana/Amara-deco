@@ -1,4 +1,4 @@
-import { PaymentConfigurationError, type PaymentProvider } from './types';
+import { PaymentConfigurationError, type PaymentProvider } from './types.ts';
 
 export interface HoneliaPayConfig {
   baseUrl: string;

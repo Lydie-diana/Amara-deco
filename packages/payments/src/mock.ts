@@ -1,5 +1,5 @@
-import type { Payment, PaymentProvider, PaymentRequest } from './types';
-import { assertValidRequest } from './validate';
+import type { Payment, PaymentProvider, PaymentRequest } from './types.ts';
+import { assertValidRequest } from './validate.ts';
 
 /**
  * Prestataire de test : aucun argent ne circule.

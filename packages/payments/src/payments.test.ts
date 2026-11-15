@@ -3,7 +3,7 @@ import {
   createHoneliaPayProvider,
   createMockPaymentProvider,
   PaymentConfigurationError,
-} from './index';
+} from './index.ts';
 
 const request = {
   reference: 'cmd_001',

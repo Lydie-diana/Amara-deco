@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import type { AmaraClient } from './client';
+import { need } from './client';
 import { useAmaraClient } from './provider';
 import {
   toMerchant,
@@ -19,17 +19,13 @@ const PRODUCT_COLUMNS =
 const SERVICE_COLUMNS =
   'id, merchant_id, category_id, title, description, booking_modes, duration_minutes, price_xaf, deposit_xaf, is_published';
 
-function need(client: AmaraClient | null): AmaraClient {
-  if (!client) throw new Error('not_configured');
-  return client;
-}
-
 /** Clés de cache, rangées ici pour invalider précisément après une modification. */
 export const catalogKeys = {
   categories: ['categories'] as const,
   merchants: (city?: string) => ['merchants', city ?? 'all'] as const,
   merchant: (slug: string) => ['merchant', slug] as const,
   product: (id: string) => ['product', id] as const,
+  service: (id: string) => ['service', id] as const,
   search: (q: string) => ['search', q] as const,
   myMerchant: ['my-merchant'] as const,
   pending: ['merchants-pending'] as const,
@@ -135,6 +131,33 @@ export function useProduct(id: string) {
         .single();
       if (mErr) throw mErr;
       return { product, merchant: toMerchant(m as MerchantRow) };
+    },
+  });
+}
+
+/** Un service et la boutique qui le propose. */
+export function useService(id: string) {
+  const client = useAmaraClient();
+  return useQuery({
+    queryKey: catalogKeys.service(id),
+    enabled: client != null && id.length > 0,
+    queryFn: async () => {
+      const db = need(client);
+      const { data, error } = await db
+        .from('services')
+        .select(SERVICE_COLUMNS)
+        .eq('id', id)
+        .maybeSingle();
+      if (error) throw error;
+      if (!data) return null;
+      const service = toService(data as ServiceRow);
+      const { data: m, error: mErr } = await db
+        .from('merchants')
+        .select(MERCHANT_COLUMNS)
+        .eq('id', service.merchantId)
+        .single();
+      if (mErr) throw mErr;
+      return { service, merchant: toMerchant(m as MerchantRow) };
     },
   });
 }
