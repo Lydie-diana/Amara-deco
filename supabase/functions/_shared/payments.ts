@@ -1,13 +1,11 @@
 // Code commun aux fonctions de paiement : prestataire configuré et accès aux données.
-import { createClient, type SupabaseClient } from 'npm:@supabase/supabase-js@2.119.0';
+import type { SupabaseClient } from 'npm:@supabase/supabase-js@2.119.0';
 import {
   createHoneliaPayProvider,
   createMockPaymentProvider,
   type CheckoutStore,
   type PaymentProvider,
 } from '../../../packages/payments/src/index.ts';
-
-export const env = (name: string) => Deno.env.get(name) ?? '';
 
 /**
  * Prestataire choisi par la super admin dans Amara Admin (écran « Paiement »).
@@ -144,12 +142,6 @@ export function supabaseStore(asUser: SupabaseClient, asServer: SupabaseClient):
     },
   };
 }
-
-/** Client avec les droits du serveur (jamais exposé aux applications). */
-export const serverClient = () =>
-  createClient(env('SUPABASE_URL'), env('SUPABASE_SERVICE_ROLE_KEY'), {
-    auth: { persistSession: false },
-  });
 
 /** Prestataire configuré, ou null si les paiements sont fermés ou mal réglés. */
 export async function providerOrNull(asServer: SupabaseClient): Promise<PaymentProvider | null> {

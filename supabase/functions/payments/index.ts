@@ -5,25 +5,13 @@
 // POST { action: "start", kind: "order" | "booking", id, payerPhone, returnUrl? }
 // POST { action: "refresh", paymentId } ou { action: "refresh", sessionId } (retour de la page
 //      de paiement hébergée, qui ajoute ?session_id=… à l'adresse de retour)
-import { createClient } from 'npm:@supabase/supabase-js@2.119.0';
 import {
   CheckoutError,
   refreshCheckout,
   startCheckout,
 } from '../../../packages/payments/src/index.ts';
-import { env, providerOrNull, serverClient, supabaseStore } from '../_shared/payments.ts';
-
-const json = (body: unknown, status = 200) =>
-  new Response(JSON.stringify(body), {
-    status,
-    headers: { 'Content-Type': 'application/json', ...cors },
-  });
-
-const cors = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-};
+import { providerOrNull, supabaseStore } from '../_shared/payments.ts';
+import { callerId, cors, json, serverClient, userClient } from '../_shared/supabase.ts';
 
 const HTTP_STATUS = {
   not_found: 404,
@@ -38,18 +26,14 @@ Deno.serve(async (req) => {
   if (req.method !== 'POST') return json({ error: 'method_not_allowed' }, 405);
 
   const authorization = req.headers.get('Authorization') ?? '';
-  const url = env('SUPABASE_URL');
-  const asUser = createClient(url, env('SUPABASE_ANON_KEY'), {
-    global: { headers: { Authorization: authorization } },
-    auth: { persistSession: false },
-  });
+  const asUser = userClient(authorization);
   const asServer = serverClient();
 
   const provider = await providerOrNull(asServer);
   if (!provider) return json({ error: 'payments_not_configured' }, 503);
 
-  const { data: auth } = await asUser.auth.getUser(authorization.replace(/^Bearer\s+/i, ''));
-  if (!auth.user) return json({ error: 'unauthorized' }, 401);
+  const userId = await callerId(authorization);
+  if (!userId) return json({ error: 'unauthorized' }, 401);
 
   let body: Record<string, unknown>;
   try {
@@ -65,7 +49,7 @@ Deno.serve(async (req) => {
         await startCheckout({
           store,
           provider,
-          userId: auth.user.id,
+          userId,
           kind: body.kind,
           targetId: String(body.id ?? ''),
           payerPhone: String(body.payerPhone ?? ''),
@@ -78,7 +62,7 @@ Deno.serve(async (req) => {
         await refreshCheckout({
           store,
           provider,
-          userId: auth.user.id,
+          userId,
           ...(typeof body.paymentId === 'string' ? { paymentId: body.paymentId } : {}),
           ...(typeof body.sessionId === 'string' ? { providerPaymentId: body.sessionId } : {}),
         }),

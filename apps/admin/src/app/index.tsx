@@ -10,6 +10,7 @@ import { Button, colors, Logo, Screen, space, Text, TextField } from '@amara/ui'
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
+import { AssistantSettingsPanel } from '../components/AssistantSettings';
 import { ContentQueue } from '../components/ContentQueue';
 import { PaymentSettingsPanel } from '../components/PaymentSettings';
 import { AllBookings, AllOrders } from '../components/SalesTabs';
@@ -45,9 +46,10 @@ function Console() {
   const { t: ta } = useTranslation('admin');
   const { t: tp } = useTranslation('paymentSettings');
   const { t: tat } = useTranslation('ateliers');
-  const [tab, setTab] = useState<'merchants' | 'content' | 'orders' | 'bookings' | 'payment'>(
-    'merchants',
-  );
+  const { t: tas } = useTranslation('assistantSettings');
+  const [tab, setTab] = useState<
+    'merchants' | 'content' | 'orders' | 'bookings' | 'payment' | 'assistant'
+  >('merchants');
   return (
     <View style={{ gap: space.lg }}>
       <Tabs
@@ -59,6 +61,7 @@ function Console() {
           { key: 'orders', label: t('orders') },
           { key: 'bookings', label: t('bookings') },
           { key: 'payment', label: tp('tab') },
+          { key: 'assistant', label: tas('tab') },
         ]}
       />
       {tab === 'merchants' ? (
@@ -69,8 +72,10 @@ function Console() {
         <AllOrders />
       ) : tab === 'bookings' ? (
         <AllBookings />
-      ) : (
+      ) : tab === 'payment' ? (
         <PaymentSettingsPanel />
+      ) : (
+        <AssistantSettingsPanel />
       )}
     </View>
   );

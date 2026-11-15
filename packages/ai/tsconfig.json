@@ -1,0 +1,10 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    // Même nom d'import que dans les fonctions Deno, résolu ici vers node_modules.
+    "paths": {
+      "npm:@anthropic-ai/sdk@1.8.0": ["../../node_modules/@anthropic-ai/sdk"]
+    }
+  },
+  "include": ["src"]
+}

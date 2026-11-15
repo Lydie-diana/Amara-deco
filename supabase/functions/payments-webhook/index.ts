@@ -6,7 +6,8 @@ import {
   reconcileProviderPayment,
   WebhookSignatureError,
 } from '../../../packages/payments/src/index.ts';
-import { providerOrNull, serverClient, supabaseStore } from '../_shared/payments.ts';
+import { providerOrNull, supabaseStore } from '../_shared/payments.ts';
+import { serverClient } from '../_shared/supabase.ts';
 
 const reply = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });

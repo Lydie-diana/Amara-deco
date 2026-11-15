@@ -14,6 +14,7 @@ réserver des services, découvrir les savoir-faire.
 | `packages/core`     | Modèles de données, validation, montants en FCFA, numéros camerounais            |
 | `packages/api`      | Accès aux données (Supabase) et connexion par SMS                                |
 | `packages/i18n`     | Traductions français et anglais                                                  |
+| `packages/ai`       | Assistant IA : consignes, outils et boucle d'appel à l'API Claude                |
 | `packages/payments` | Interface de paiement, prestataire de test, adaptateur Honelia Pay               |
 | `packages/features` | Écrans et briques partagés entre les applications                                |
 
@@ -67,6 +68,20 @@ l'appelle sans compte Amara, seule la signature fait foi.
 
 Le prestataire `mock` valide les paiements sans argent réel. Il n'est proposé que sur une base
 où le réglage serveur `allow_mock_payments` vaut `true` (dev uniquement, jamais en prod).
+
+## Assistant IA
+
+Le client décrit son besoin (écran `/assistant`) ; la fonction Supabase `assistant`
+(`supabase/functions/assistant`) appelle l'API Claude avec la boucle de `packages/ai`.
+L'assistant n'a qu'un outil de recherche, la fonction de base `search_catalog`, qui ne renvoie
+que le catalogue public (objets publiés et en stock, services publiés, boutiques validées).
+Il montre ensuite ses choix sous forme de cartes qui ouvrent l'objet, le service ou la boutique.
+
+Tout se règle dans **Amara Admin, onglet « Assistant »** : allumé ou éteint, clé de l'API Claude
+(chiffrée dans Supabase Vault, jamais relue), modèle (`claude-opus-5-5` par défaut) et nombre de
+demandes par personne sur 24 heures. Aucune conversation n'est gardée en base, seulement
+l'heure de chaque demande pour le quota. Si un filtre de sécurité refuse une demande, l'API la
+rejoue sur un autre modèle (`fallbacks: "default"`).
 
 ## Ateliers
 

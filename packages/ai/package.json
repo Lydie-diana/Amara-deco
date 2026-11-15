@@ -1,0 +1,16 @@
+{
+  "name": "@amara/ai",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Assistant IA d'Amara : consignes, outils et boucle d'appel à l'API Claude (côté serveur).",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@anthropic-ai/sdk": "1.8.0",
+    "vitest": "^5.1.0"
+  }
+}

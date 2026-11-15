@@ -2,6 +2,7 @@ import type { BookingMode } from '@amara/core';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { need, type AmaraClient } from './client';
+import { invokeFunction } from './functions';
 import { useAmaraClient } from './provider';
 
 /**
@@ -478,18 +479,8 @@ export interface PaymentResult {
   checkoutUrl?: string;
 }
 
-async function invokePayments(db: AmaraClient, body: Record<string, unknown>) {
-  const { data, error } = await db.functions.invoke<PaymentResult>('payments', { body });
-  if (error) {
-    // Le code d'erreur métier (not_payable, invalid_phone…) est dans le corps de la réponse.
-    const context = (error as { context?: Response }).context;
-    const detail = context
-      ? ((await context.json().catch(() => null)) as { error?: string } | null)
-      : null;
-    throw new Error(detail?.error ?? 'payment_failed');
-  }
-  return data as PaymentResult;
-}
+const invokePayments = (db: AmaraClient, body: Record<string, unknown>) =>
+  invokeFunction<PaymentResult>(db, 'payments', body, 'payment_failed');
 
 export function useStartPayment() {
   const client = useAmaraClient();
