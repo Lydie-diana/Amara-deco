@@ -2,8 +2,13 @@ import { PaymentConfigurationError, type PaymentProvider } from './types.ts';
 
 export interface HoneliaPayConfig {
   baseUrl: string;
-  /** Clé secrète : uniquement côté serveur (fonctions Supabase), jamais dans une application. */
+  /** Clé secrète : lue côté serveur depuis le coffre, jamais envoyée à une application. */
   secretKey: string;
+  publicKey?: string;
+  /** Sert à vérifier les notifications envoyées par Honelia Pay. */
+  webhookSecret?: string;
+  /** « sandbox » pour les essais, « live » pour l'argent réel. */
+  mode?: 'sandbox' | 'live';
 }
 
 /**

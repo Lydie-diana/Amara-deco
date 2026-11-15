@@ -10,6 +10,7 @@ import { Button, colors, Logo, Screen, space, Text, TextField } from '@amara/ui'
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
+import { PaymentSettingsPanel } from '../components/PaymentSettings';
 import { AllBookings, AllOrders } from '../components/SalesTabs';
 
 export default function AdminHome() {
@@ -41,7 +42,8 @@ function AdminOnly() {
 function Console() {
   const { t } = useTranslation('sales');
   const { t: ta } = useTranslation('admin');
-  const [tab, setTab] = useState<'merchants' | 'orders' | 'bookings'>('merchants');
+  const { t: tp } = useTranslation('paymentSettings');
+  const [tab, setTab] = useState<'merchants' | 'orders' | 'bookings' | 'payment'>('merchants');
   return (
     <View style={{ gap: space.lg }}>
       <Tabs
@@ -51,14 +53,17 @@ function Console() {
           { key: 'merchants', label: ta('merchants') },
           { key: 'orders', label: t('orders') },
           { key: 'bookings', label: t('bookings') },
+          { key: 'payment', label: tp('tab') },
         ]}
       />
       {tab === 'merchants' ? (
         <PendingMerchants />
       ) : tab === 'orders' ? (
         <AllOrders />
-      ) : (
+      ) : tab === 'bookings' ? (
         <AllBookings />
+      ) : (
+        <PaymentSettingsPanel />
       )}
     </View>
   );
