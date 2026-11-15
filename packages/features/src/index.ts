@@ -4,3 +4,4 @@ export { PhoneSignInScreen, type PhoneSignInScreenProps } from './auth/PhoneSign
 export { RequireSession } from './auth/RequireSession';
 export { RootLayout } from './routes/RootLayout';
 export { NotFoundScreen } from './routes/NotFoundScreen';
+export * from './catalog';
