@@ -1,0 +1,47 @@
+export const fr = {
+  common: {
+    appName: 'Amara',
+    tagline: 'Artisans · Décoration',
+    languageToggle: 'English',
+    back: 'Retour',
+    continue: 'Continuer',
+    loading: 'Chargement…',
+    configMissing:
+      "La connexion n'est pas encore configurée. Ajoutez les clés Supabase dans le fichier .env.",
+  },
+  home: {
+    title: 'Habillez votre intérieur,',
+    titleAccent: 'fait main.',
+    subtitle: 'Commandez une pièce unique ou réservez un artisan près de chez vous.',
+    categories: 'Catégories',
+    sculpture: 'Sculpture',
+    furniture: 'Mobilier',
+    textile: 'Textile',
+    lighting: 'Lumière',
+    services: 'Services',
+    signIn: 'Se connecter',
+  },
+  auth: {
+    title: 'Bienvenue sur Amara',
+    phoneLabel: 'Votre numéro de téléphone',
+    phonePlaceholder: '6 99 12 34 56',
+    phoneInvalid: 'Entrez un numéro camerounais à 9 chiffres.',
+    sendCode: 'Recevoir un code par SMS',
+    codeLabel: 'Code reçu par SMS',
+    codeSentTo: 'Code envoyé au {{phone}}',
+    verify: 'Valider',
+    changeNumber: 'Changer de numéro',
+    error: 'Une erreur est survenue. Réessayez dans un instant.',
+    signedIn: 'Vous êtes connecté.',
+    signOut: 'Se déconnecter',
+  },
+  pro: {
+    title: 'Amara Pro',
+    welcome: 'Bonjour',
+    comingSoon: 'Votre tableau de bord arrive à la prochaine étape.',
+  },
+  admin: {
+    title: 'Amara Admin',
+    comingSoon: 'La validation des marchands arrive à la prochaine étape.',
+  },
+} as const;
