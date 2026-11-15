@@ -63,6 +63,10 @@ do $$ begin
     assert false, 'dossier d''une autre boutique';
   exception when insufficient_privilege then null; end;
   begin
+    insert into storage.objects (bucket_id, name) values ('ateliers', 'pas-une-boutique/x.jpg');
+    assert false, 'dossier inconnu';
+  exception when insufficient_privilege then null; end;
+  begin
     insert into public.post_media (post_id, path, type)
     values ('00000000-0000-0000-0000-000000000321', '00000000-0000-0000-0000-000000000312/x.jpg', 'image');
     assert false, 'média hors du dossier de la boutique';

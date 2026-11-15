@@ -72,6 +72,17 @@ language sql stable security definer set search_path = '' as $$
   );
 $$;
 
+-- Dossier de stockage de sa propre boutique (comparaison en texte : jamais d'erreur de format).
+create function private.owns_folder(p_path text) returns boolean
+language sql stable security definer set search_path = '' as $$
+  select exists (
+    select 1 from public.merchants
+    where id::text = (storage.foldername(p_path))[1] and owner_id = (select auth.uid())
+  );
+$$;
+
+revoke all on function private.owns_folder(text) from public;
+grant execute on function private.owns_folder(text) to anon, authenticated;
 revoke all on function private.can_see_post(uuid) from public;
 revoke all on function private.can_edit_post(uuid) from public;
 revoke all on function private.can_see_media(text) from public;
@@ -153,16 +164,16 @@ create policy ateliers_read on storage.objects for select to anon, authenticated
     bucket_id = 'ateliers'
     and (
       (select private.can_see_media(name))
-      or (select private.owns_merchant(((storage.foldername(name))[1])::uuid))
+      or (select private.owns_folder(name))
     )
   );
 create policy ateliers_upload on storage.objects for insert to authenticated
   with check (
     bucket_id = 'ateliers'
-    and (select private.owns_merchant(((storage.foldername(name))[1])::uuid))
+    and (select private.owns_folder(name))
   );
 create policy ateliers_remove on storage.objects for delete to authenticated
   using (
     bucket_id = 'ateliers'
-    and (select private.owns_merchant(((storage.foldername(name))[1])::uuid))
+    and (select private.owns_folder(name))
   );
