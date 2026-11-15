@@ -1,8 +1,9 @@
-import { LanguageToggle } from '@amara/features';
+import { useMerchants } from '@amara/api';
+import { LanguageToggle, MerchantCard, QueryState } from '@amara/features';
 import { useTranslation } from '@amara/i18n';
-import { Arch, Button, colors, fonts, Logo, Screen, space, Text } from '@amara/ui';
+import { Button, colors, fonts, Logo, Screen, space, Text } from '@amara/ui';
 import { router } from 'expo-router';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 const CATEGORIES = [
   { key: 'sculpture', color: colors.clay },
@@ -14,6 +15,8 @@ const CATEGORIES = [
 
 export default function Home() {
   const { t } = useTranslation('home');
+  const { t: tc } = useTranslation('catalog');
+  const merchants = useMerchants();
 
   return (
     <Screen>
@@ -31,6 +34,14 @@ export default function Home() {
         </Text>
         <Text tone="muted">{t('subtitle')}</Text>
       </View>
+
+      <Pressable
+        accessibilityRole="search"
+        onPress={() => router.push('/recherche')}
+        style={styles.search}
+      >
+        <Text tone="muted">{tc('searchPlaceholder')}</Text>
+      </Pressable>
 
       <View style={{ gap: space.md }}>
         <Text variant="eyebrow" tone="muted">
@@ -54,12 +65,28 @@ export default function Home() {
         </View>
       </View>
 
-      <View style={styles.showcase}>
-        <Arch width={150} height={190} color="#C9B79C" />
-        <Arch width={150} height={190} color="#8E9A78" />
+      <View style={{ gap: space.md }}>
+        <Text variant="title">{tc('discoverShops')}</Text>
+        <QueryState query={merchants}>
+          {(list) =>
+            list.length === 0 ? (
+              <Text tone="muted">{tc('noShops')}</Text>
+            ) : (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{ gap: space.md }}
+              >
+                {list.map((m) => (
+                  <MerchantCard key={m.id} merchant={m} />
+                ))}
+              </ScrollView>
+            )
+          }
+        </QueryState>
       </View>
 
-      <Button label={t('signIn')} onPress={() => router.push('/connexion')} />
+      <Button label={t('signIn')} variant="secondary" onPress={() => router.push('/connexion')} />
     </Screen>
   );
 }
@@ -67,8 +94,16 @@ export default function Home() {
 const styles = StyleSheet.create({
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   hero: { gap: space.sm },
+  search: {
+    minHeight: 52,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: colors.sand,
+    backgroundColor: colors.paper,
+    paddingHorizontal: space.lg - 4,
+    justifyContent: 'center',
+  },
   categories: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm + 4 },
   category: { alignItems: 'center', gap: space.sm, width: 58 },
   dot: { width: 52, height: 52, borderRadius: 26 },
-  showcase: { flexDirection: 'row', gap: space.md, justifyContent: 'center' },
 });
