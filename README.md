@@ -25,7 +25,7 @@ dans un paquet.
 ```sh
 corepack enable
 pnpm install
-cp .env.example apps/client/.env   # puis renseigner les clés Supabase
+cp .env.example apps/client/.env.development   # clés du projet Supabase de dev
 pnpm --filter @amara/app-client web
 ```
 
@@ -39,3 +39,9 @@ pnpm build:web
 ```
 
 Ces vérifications tournent aussi sur chaque pull request (GitHub Actions).
+
+## Environnements
+
+Deux projets Supabase : **dev** (« amara-dev ») et **prod** (nnqnrrsgqxzzesdwvigh).
+Chaque migration de `supabase/migrations` est appliquée d'abord en dev, vérifiée, puis en prod.
+Les apps lisent `.env.development` en local et `.env.production` pour les builds (voir `.env.example`).
