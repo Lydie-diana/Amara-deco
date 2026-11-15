@@ -1,0 +1,13 @@
+{
+  "name": "@amara/functions",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Fonctions Supabase (Deno). Ce paquet sert seulement à les vérifier avec TypeScript.",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@amara/payments": "workspace:*",
+    "@supabase/supabase-js": "^2.119.0"
+  }
+}

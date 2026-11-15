@@ -39,5 +39,5 @@ export function initI18n(locale: SupportedLocale) {
   return i18next;
 }
 
-export { useTranslation } from 'react-i18next';
+export { I18nextProvider, useTranslation } from 'react-i18next';
 export type { Namespace, Resources } from './types';

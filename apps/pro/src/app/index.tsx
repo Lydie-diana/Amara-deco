@@ -27,6 +27,9 @@ function MyShop() {
   const { t } = useTranslation('merchant');
   const { t: tc } = useTranslation('catalog');
   const { t: tp } = useTranslation('pro');
+  const { t: ts } = useTranslation('sales');
+  const { t: tm } = useTranslation('messages');
+  const { t: th } = useTranslation('hours');
   const query = useMyMerchant();
 
   return (
@@ -55,6 +58,29 @@ function MyShop() {
                     ? t('statusRejected', { note: data.merchant.reviewNote ?? '' })
                     : t('statusPending')}
               </Text>
+            </View>
+
+            <View style={styles.nav}>
+              <Button
+                label={ts('orders')}
+                variant="secondary"
+                onPress={() => router.push('/commandes')}
+              />
+              <Button
+                label={ts('bookings')}
+                variant="secondary"
+                onPress={() => router.push('/reservations')}
+              />
+              <Button
+                label={tm('title')}
+                variant="secondary"
+                onPress={() => router.push('/messages')}
+              />
+              <Button
+                label={th('title')}
+                variant="secondary"
+                onPress={() => router.push('/horaires')}
+              />
             </View>
 
             <View style={{ gap: space.md }}>
@@ -92,6 +118,7 @@ function MyShop() {
 }
 
 const styles = StyleSheet.create({
+  nav: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
   banner: { backgroundColor: colors.olive, borderRadius: 32, padding: space.lg, gap: space.sm },
   bannerTop: {
     flexDirection: 'row',

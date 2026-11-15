@@ -1,9 +1,9 @@
-import { useProduct } from '@amara/api';
+import { cartActions, useCart, useProduct } from '@amara/api';
 import { formatXaf } from '@amara/core';
 import { archTint, BackButton, QueryState, useCategoryName } from '@amara/features';
 import { useTranslation } from '@amara/i18n';
 import { Arch, Button, colors, fonts, Screen, space, Text } from '@amara/ui';
-import { Link, useLocalSearchParams } from 'expo-router';
+import { Link, router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { View } from 'react-native';
 
@@ -12,7 +12,9 @@ export default function ProductPage() {
   const { t } = useTranslation('catalog');
   const query = useProduct(id);
   const categoryName = useCategoryName();
-  const [cartNotice, setCartNotice] = useState(false);
+  const { t: tcart } = useTranslation('cart');
+  const cart = useCart();
+  const [added, setAdded] = useState(false);
 
   return (
     <Screen>
@@ -45,11 +47,35 @@ export default function ProductPage() {
               <Text style={{ fontFamily: fonts.bodyBold, fontSize: 22 }}>
                 {formatXaf(data.product.priceXaf)}
               </Text>
-              <Button label={t('addToCart')} onPress={() => setCartNotice(true)} />
-              {cartNotice ? (
-                <Text variant="caption" tone="muted" accessibilityLiveRegion="polite">
-                  {t('cartSoon')}
-                </Text>
+              {data.product.stock > 0 ? (
+                <Button
+                  label={t('addToCart')}
+                  onPress={() => {
+                    cartActions.add({
+                      productId: data.product.id,
+                      merchantId: data.merchant.id,
+                      merchantName: data.merchant.name,
+                      title: data.product.title,
+                      unitPriceXaf: data.product.priceXaf,
+                      maxQuantity: data.product.stock,
+                    });
+                    setAdded(true);
+                  }}
+                />
+              ) : (
+                <Text tone="muted">{tcart('soldOut')}</Text>
+              )}
+              {added ? (
+                <View style={{ gap: space.sm }} accessibilityLiveRegion="polite">
+                  <Text variant="caption" tone="muted">
+                    {tcart('added')}
+                  </Text>
+                  <Button
+                    variant="secondary"
+                    label={tcart('open', { count: cart.reduce((n, l) => n + l.quantity, 0) })}
+                    onPress={() => router.push('/panier')}
+                  />
+                </View>
               ) : null}
             </View>
           )

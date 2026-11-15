@@ -4,11 +4,13 @@ import {
   useReviewMerchant,
   type MerchantWithReview,
 } from '@amara/api';
-import { cardStyle, LanguageToggle, QueryState, RequireSession } from '@amara/features';
+import { cardStyle, LanguageToggle, QueryState, RequireSession, Tabs } from '@amara/features';
 import { useTranslation } from '@amara/i18n';
 import { Button, colors, Logo, Screen, space, Text, TextField } from '@amara/ui';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
+
+import { AllBookings, AllOrders } from '../components/SalesTabs';
 
 export default function AdminHome() {
   return (
@@ -31,8 +33,34 @@ function AdminOnly() {
   const isAdmin = useIsAdmin();
   return (
     <QueryState query={isAdmin}>
-      {(ok) => (ok ? <PendingMerchants /> : <Text tone="muted">{t('notAdmin')}</Text>)}
+      {(ok) => (ok ? <Console /> : <Text tone="muted">{t('notAdmin')}</Text>)}
     </QueryState>
+  );
+}
+
+function Console() {
+  const { t } = useTranslation('sales');
+  const { t: ta } = useTranslation('admin');
+  const [tab, setTab] = useState<'merchants' | 'orders' | 'bookings'>('merchants');
+  return (
+    <View style={{ gap: space.lg }}>
+      <Tabs
+        value={tab}
+        onChange={setTab}
+        items={[
+          { key: 'merchants', label: ta('merchants') },
+          { key: 'orders', label: t('orders') },
+          { key: 'bookings', label: t('bookings') },
+        ]}
+      />
+      {tab === 'merchants' ? (
+        <PendingMerchants />
+      ) : tab === 'orders' ? (
+        <AllOrders />
+      ) : (
+        <AllBookings />
+      )}
+    </View>
   );
 }
 

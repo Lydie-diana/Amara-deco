@@ -1,4 +1,4 @@
-import { useMerchants } from '@amara/api';
+import { cartCount, useCart, useMerchants, useSession } from '@amara/api';
 import { LanguageToggle, MerchantCard, QueryState } from '@amara/features';
 import { useTranslation } from '@amara/i18n';
 import { Button, colors, fonts, Logo, Screen, space, Text } from '@amara/ui';
@@ -16,13 +16,28 @@ const CATEGORIES = [
 export default function Home() {
   const { t } = useTranslation('home');
   const { t: tc } = useTranslation('catalog');
+  const { t: tcart } = useTranslation('cart');
+  const { t: ts } = useTranslation('sales');
+  const { t: tmsg } = useTranslation('messages');
   const merchants = useMerchants();
+  const { session } = useSession();
+  const count = cartCount(useCart());
 
   return (
     <Screen>
       <View style={styles.header}>
         <Logo />
         <LanguageToggle />
+      </View>
+
+      <View style={styles.shortcuts}>
+        <Shortcut label={tcart('open', { count })} onPress={() => router.push('/panier')} />
+        {session ? (
+          <>
+            <Shortcut label={ts('myPurchases')} onPress={() => router.push('/achats')} />
+            <Shortcut label={tmsg('title')} onPress={() => router.push('/messages')} />
+          </>
+        ) : null}
       </View>
 
       <View style={styles.hero}>
@@ -86,12 +101,33 @@ export default function Home() {
         </QueryState>
       </View>
 
-      <Button label={t('signIn')} variant="secondary" onPress={() => router.push('/connexion')} />
+      {session ? null : (
+        <Button label={t('signIn')} variant="secondary" onPress={() => router.push('/connexion')} />
+      )}
     </Screen>
   );
 }
 
+function Shortcut({ label, onPress }: { label: string; onPress: () => void }) {
+  return (
+    <Pressable accessibilityRole="link" onPress={onPress} style={styles.shortcut}>
+      <Text variant="caption" style={{ fontFamily: fonts.bodySemibold, color: colors.ebony }}>
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
 const styles = StyleSheet.create({
+  shortcuts: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
+  shortcut: {
+    minHeight: 40,
+    paddingHorizontal: space.md,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: colors.sandLine,
+    justifyContent: 'center',
+  },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   hero: { gap: space.sm },
   search: {

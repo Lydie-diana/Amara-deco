@@ -1,8 +1,8 @@
 import { AmaraDataProvider, createAmaraClient } from '@amara/api';
-import { initI18n, pickLocale } from '@amara/i18n';
+import { I18nextProvider, initI18n, pickLocale } from '@amara/i18n';
 import { colors, useAmaraFonts } from '@amara/ui';
 import { getLocales } from 'expo-localization';
-import { useEffect, useState, type ReactNode } from 'react';
+import { startTransition, useEffect, useState, type ReactNode } from 'react';
 import { ActivityIndicator, Platform, View } from 'react-native';
 
 export interface AppProvidersProps {
@@ -22,14 +22,17 @@ export function AppProviders({ children }: AppProvidersProps) {
     }),
   );
   // Sur le web, la page est d'abord rendue sur le serveur en français, puis passe à la langue du
-  // navigateur une fois chargée : le serveur et le navigateur affichent ainsi la même première page.
-  const [i18n] = useState(() =>
+  // navigateur une fois chargée. La langue passe par l'état React (et non en modifiant l'instance
+  // partagée) : les parties de la page encore en cours d'hydratation gardent ainsi le français
+  // du serveur, sans écart entre le HTML reçu et le premier rendu.
+  const [i18n, setI18n] = useState(() =>
     initI18n(Platform.OS === 'web' ? 'fr' : pickLocale(getLocales().map((l) => l.languageCode))),
   );
   useEffect(() => {
     if (Platform.OS !== 'web') return;
     const preferred = pickLocale(getLocales().map((l) => l.languageCode));
-    if (preferred !== i18n.language) void i18n.changeLanguage(preferred);
+    if (preferred === i18n.language) return;
+    startTransition(() => setI18n(i18n.cloneInstance({ lng: preferred, initAsync: false })));
   }, [i18n]);
 
   if (!fontsReady) {
@@ -46,5 +49,9 @@ export function AppProviders({ children }: AppProvidersProps) {
       </View>
     );
   }
-  return <AmaraDataProvider client={client}>{children}</AmaraDataProvider>;
+  return (
+    <I18nextProvider i18n={i18n}>
+      <AmaraDataProvider client={client}>{children}</AmaraDataProvider>
+    </I18nextProvider>
+  );
 }

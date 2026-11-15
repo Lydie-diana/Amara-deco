@@ -24,3 +24,9 @@ export function createAmaraClient({ url, anonKey }: AmaraClientConfig): AmaraCli
     },
   });
 }
+
+/** Le client, ou une erreur claire si l'application n'a pas ses clés Supabase. */
+export function need(client: AmaraClient | null): AmaraClient {
+  if (!client) throw new Error('not_configured');
+  return client;
+}
