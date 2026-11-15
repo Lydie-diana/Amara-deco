@@ -30,6 +30,7 @@ function MyShop() {
   const { t: ts } = useTranslation('sales');
   const { t: tm } = useTranslation('messages');
   const { t: th } = useTranslation('hours');
+  const { t: ta } = useTranslation('ateliers');
   const query = useMyMerchant();
 
   return (
@@ -80,6 +81,11 @@ function MyShop() {
                 label={th('title')}
                 variant="secondary"
                 onPress={() => router.push('/horaires')}
+              />
+              <Button
+                label={ta('title')}
+                variant="secondary"
+                onPress={() => router.push('/ateliers')}
               />
             </View>
 

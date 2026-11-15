@@ -1,5 +1,13 @@
-import { useMerchant, useSession, useStartConversation } from '@amara/api';
-import { archTint, BackButton, ProductRow, QueryState, ServiceRow, Tabs } from '@amara/features';
+import { useMerchant, useMerchantPosts, useSession, useStartConversation } from '@amara/api';
+import {
+  archTint,
+  BackButton,
+  PostCard,
+  ProductRow,
+  QueryState,
+  ServiceRow,
+  Tabs,
+} from '@amara/features';
 import { useTranslation } from '@amara/i18n';
 import { Arch, Button, Screen, space, Text } from '@amara/ui';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
@@ -11,7 +19,9 @@ export default function Shop() {
   const { t } = useTranslation('catalog');
   const query = useMerchant(slug);
   const { t: tm } = useTranslation('messages');
-  const [tab, setTab] = useState<'products' | 'services'>('products');
+  const { t: ta } = useTranslation('ateliers');
+  const [tab, setTab] = useState<'products' | 'services' | 'atelier'>('products');
+  const posts = useMerchantPosts(query.data?.merchant.id);
   const { session } = useSession();
   const startConversation = useStartConversation();
   const contact = (merchantId: string) => {
@@ -57,9 +67,20 @@ export default function Shop() {
                 items={[
                   { key: 'products', label: t('products') },
                   { key: 'services', label: t('services') },
+                  { key: 'atelier', label: ta('shopTab') },
                 ]}
               />
-              {tab === 'products' ? (
+              {tab === 'atelier' ? (
+                <QueryState query={posts}>
+                  {(list) =>
+                    list.length ? (
+                      list.map((p) => <PostCard key={p.id} post={p} linkToShop={false} />)
+                    ) : (
+                      <Text tone="muted">{ta('shopEmpty')}</Text>
+                    )
+                  }
+                </QueryState>
+              ) : tab === 'products' ? (
                 data.products.length ? (
                   data.products.map((p) => <ProductRow key={p.id} product={p} />)
                 ) : (

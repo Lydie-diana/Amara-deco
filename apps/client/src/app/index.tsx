@@ -19,6 +19,7 @@ export default function Home() {
   const { t: tcart } = useTranslation('cart');
   const { t: ts } = useTranslation('sales');
   const { t: tmsg } = useTranslation('messages');
+  const { t: ta } = useTranslation('ateliers');
   const merchants = useMerchants();
   const { session } = useSession();
   const count = cartCount(useCart());
@@ -31,6 +32,7 @@ export default function Home() {
       </View>
 
       <View style={styles.shortcuts}>
+        <Shortcut label={ta('shortcut')} onPress={() => router.push('/ateliers')} />
         <Shortcut label={tcart('open', { count })} onPress={() => router.push('/panier')} />
         {session ? (
           <>

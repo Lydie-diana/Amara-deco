@@ -58,3 +58,11 @@ les relire, et seule la fonction `payments` les lit. Sans réglage, la fonction 
 
 Le prestataire `mock` valide les paiements sans argent réel. Il n'est proposé que sur une base
 où le réglage serveur `allow_mock_payments` vaut `true` (dev uniquement, jamais en prod).
+
+## Ateliers
+
+Photos, vidéos et statuts de 24 h des artisans (`packages/api/src/ateliers.ts`,
+`packages/features/src/ateliers`). Les fichiers sont dans le stockage Supabase `ateliers`
+(privé, 50 Mo par fichier, JPEG, PNG, WebP, MP4, MOV), rangés par boutique. Rien n'est visible
+avant la validation de la super admin (Amara Admin, onglet « Contenus ») ; les applications
+reçoivent des liens signés valables une heure. Un statut reste en ligne 24 h après sa validation.
