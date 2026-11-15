@@ -8,3 +8,4 @@ export * from './sales';
 export * from './messages';
 export * from './paymentSettings';
 export * from './ateliers';
+export * from './assistant';

@@ -7,7 +7,9 @@
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
+    "@amara/ai": "workspace:*",
     "@amara/payments": "workspace:*",
+    "@anthropic-ai/sdk": "1.8.0",
     "@supabase/supabase-js": "^2.119.0"
   }
 }

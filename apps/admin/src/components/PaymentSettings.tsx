@@ -8,8 +8,10 @@ import {
 import { cardStyle, QueryState, Tabs } from '@amara/features';
 import { useTranslation } from '@amara/i18n';
 import { Button, colors, radius, space, Text, TextField } from '@amara/ui';
-import { useState, type ReactNode } from 'react';
+import { useState } from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
+
+import { Field, SecretField, settingsStyles, type SecretDraft } from './SettingsFields';
 
 /** Écran « Paiement » : la super admin choisit le prestataire et saisit ses accès. */
 export function PaymentSettingsPanel() {
@@ -35,9 +37,6 @@ const WEBHOOK_EVENTS = [
   'payment.failed',
 ];
 
-/** Une clé secrète : jamais relue, seulement remplacée (texte saisi) ou effacée (''). */
-type SecretDraft = string | undefined;
-
 function SettingsForm({ settings }: { settings: PaymentSettings }) {
   const { t, i18n } = useTranslation('paymentSettings');
   const save = useSavePaymentSettings();
@@ -62,7 +61,7 @@ function SettingsForm({ settings }: { settings: PaymentSettings }) {
     : null;
 
   return (
-    <View style={[cardStyle, styles.card]}>
+    <View style={[cardStyle, settingsStyles.card]}>
       <Field label={t('provider')}>
         <Tabs
           value={provider}
@@ -135,7 +134,7 @@ function SettingsForm({ settings }: { settings: PaymentSettings }) {
         </>
       ) : null}
 
-      <View style={styles.footer}>
+      <View style={settingsStyles.footer}>
         <Button
           label={t('save')}
           loading={save.isPending}
@@ -161,58 +160,7 @@ function SettingsForm({ settings }: { settings: PaymentSettings }) {
   );
 }
 
-function SecretField({
-  label,
-  saved,
-  value,
-  onChange,
-}: {
-  label: string;
-  saved: boolean;
-  value: SecretDraft;
-  onChange: (v: SecretDraft) => void;
-}) {
-  const { t } = useTranslation('paymentSettings');
-  const removing = value === '';
-  return (
-    <View style={{ gap: space.xs }}>
-      <TextField
-        label={`${label} · ${removing ? t('removing') : saved ? t('saved') : t('notSaved')}`}
-        value={value ?? ''}
-        onChangeText={(v) => onChange(v === '' ? undefined : v)}
-        placeholder={saved ? '••••••••' : undefined}
-        secureTextEntry
-        autoCapitalize="none"
-        autoCorrect={false}
-        autoComplete="off"
-      />
-      {saved ? (
-        <View style={styles.secretActions}>
-          <Text variant="caption" tone="muted" style={{ flex: 1 }}>
-            {t('keepHint')}
-          </Text>
-          {!removing ? (
-            <Button label={t('remove')} variant="ghost" onPress={() => onChange('')} />
-          ) : null}
-        </View>
-      ) : null}
-    </View>
-  );
-}
-
-function Field({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <View style={{ gap: space.sm }}>
-      <Text variant="caption">{label}</Text>
-      {children}
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
-  card: { gap: space.lg, padding: space.lg, maxWidth: 640 },
-  footer: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: space.md },
-  secretActions: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
   webhook: {
     gap: space.xs,
     padding: space.md,
