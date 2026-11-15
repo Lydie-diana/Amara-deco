@@ -144,4 +144,16 @@ do $$ begin
   end;
 end $$;
 
+-- Fonctions internes : hors de portée de l'API.
+do $$ begin
+  assert not has_function_privilege('anon', 'public.is_admin()', 'execute'), 'is_admin fermé aux anonymes';
+  assert has_function_privilege('authenticated', 'public.is_admin()', 'execute'), 'is_admin ouvert aux connectés';
+  assert not has_function_privilege('authenticated', 'public.guard_merchant_review()', 'execute'), 'déclencheur non appelable';
+  assert not has_function_privilege('authenticated', 'public.handle_new_user()', 'execute'), 'déclencheur non appelable';
+  assert not has_function_privilege('authenticated', 'public.touch_updated_at()', 'execute'), 'déclencheur non appelable';
+  assert not exists (select 1 from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+                     where n.nspname = 'public' and p.proname in ('owns_merchant', 'merchant_is_public')),
+    'aides des règles d''accès sorties du schéma public';
+end $$;
+
 \echo 'Tous les tests de la base passent.'
