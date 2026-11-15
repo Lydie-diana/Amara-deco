@@ -57,5 +57,7 @@ l'interface de `packages/payments`. Secrets de la fonction (jamais dans le code)
 | `HONELIA_PAY_BASE_URL`   | —      | URL de l'API Honelia Pay |
 | `HONELIA_PAY_SECRET_KEY` | —      | clé secrète Honelia Pay  |
 
-Sans `PAYMENT_PROVIDER`, la fonction refuse tout paiement. Le prestataire `mock` valide les
+Le prestataire peut aussi être choisi par le réglage serveur `payment_provider` de la base
+(table `private.server_settings`, lisible par le serveur seulement) ; le secret a priorité.
+Sans l'un ni l'autre, la fonction refuse tout paiement. Le prestataire `mock` valide les
 paiements sans argent réel : il ne doit jamais être activé en prod.

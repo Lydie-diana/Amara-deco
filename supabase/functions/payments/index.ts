@@ -17,9 +17,17 @@ import {
 
 const env = (name: string) => Deno.env.get(name) ?? '';
 
-/** Prestataire choisi par le secret PAYMENT_PROVIDER : « honelia » en prod, « mock » en dev. */
-function configuredProvider(): PaymentProvider | null {
-  switch (env('PAYMENT_PROVIDER')) {
+/**
+ * Prestataire choisi par le secret PAYMENT_PROVIDER, sinon par le réglage serveur
+ * « payment_provider » de la base : « honelia » en prod, « mock » en dev.
+ */
+async function configuredProvider(asServer: SupabaseClient): Promise<PaymentProvider | null> {
+  let name = env('PAYMENT_PROVIDER');
+  if (!name) {
+    const { data } = await asServer.rpc('server_setting', { p_key: 'payment_provider' });
+    name = typeof data === 'string' ? data : '';
+  }
+  switch (name) {
     case 'honelia':
       return createHoneliaPayProvider({
         baseUrl: env('HONELIA_PAY_BASE_URL'),
@@ -155,9 +163,6 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: cors });
   if (req.method !== 'POST') return json({ error: 'method_not_allowed' }, 405);
 
-  const provider = configuredProvider();
-  if (!provider) return json({ error: 'payments_not_configured' }, 503);
-
   const authorization = req.headers.get('Authorization') ?? '';
   const url = env('SUPABASE_URL');
   const asUser = createClient(url, env('SUPABASE_ANON_KEY'), {
@@ -167,6 +172,9 @@ Deno.serve(async (req) => {
   const asServer = createClient(url, env('SUPABASE_SERVICE_ROLE_KEY'), {
     auth: { persistSession: false },
   });
+
+  const provider = await configuredProvider(asServer);
+  if (!provider) return json({ error: 'payments_not_configured' }, 503);
 
   const { data: auth } = await asUser.auth.getUser(authorization.replace(/^Bearer\s+/i, ''));
   if (!auth.user) return json({ error: 'unauthorized' }, 401);
