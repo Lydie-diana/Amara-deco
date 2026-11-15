@@ -1,6 +1,6 @@
 // Fonction « payments » : lance et suit le paiement d'une commande ou d'une réservation.
 // Les montants viennent de la base, jamais de l'application. Les secrets du prestataire
-// (Honelia Pay) restent ici, dans les secrets de la fonction.
+// (Honelia Pay) sont saisis par la super admin et lus ici depuis le coffre de la base.
 //
 // POST { action: "start", kind: "order" | "booking", id, payerPhone }
 // POST { action: "refresh", paymentId }
@@ -18,20 +18,21 @@ import {
 const env = (name: string) => Deno.env.get(name) ?? '';
 
 /**
- * Prestataire choisi par le secret PAYMENT_PROVIDER, sinon par le réglage serveur
- * « payment_provider » de la base : « honelia » en prod, « mock » en dev.
+ * Prestataire choisi par la super admin dans Amara Admin (écran « Paiement »).
+ * Les clés viennent du coffre de la base ; sans réglage, les paiements restent fermés.
  */
 async function configuredProvider(asServer: SupabaseClient): Promise<PaymentProvider | null> {
-  let name = env('PAYMENT_PROVIDER');
-  if (!name) {
-    const { data } = await asServer.rpc('server_setting', { p_key: 'payment_provider' });
-    name = typeof data === 'string' ? data : '';
-  }
-  switch (name) {
+  const { data, error } = await asServer.rpc('payment_runtime_config');
+  if (error) throw new Error(error.message);
+  const config = (data ?? {}) as Record<string, string | null>;
+  switch (config.provider) {
     case 'honelia':
       return createHoneliaPayProvider({
-        baseUrl: env('HONELIA_PAY_BASE_URL'),
-        secretKey: env('HONELIA_PAY_SECRET_KEY'),
+        baseUrl: config.baseUrl ?? '',
+        secretKey: config.secretKey ?? '',
+        publicKey: config.publicKey ?? undefined,
+        webhookSecret: config.webhookSecret ?? undefined,
+        mode: config.mode === 'live' ? 'live' : 'sandbox',
       });
     case 'mock':
       return createMockPaymentProvider();
@@ -173,7 +174,13 @@ Deno.serve(async (req) => {
     auth: { persistSession: false },
   });
 
-  const provider = await configuredProvider(asServer);
+  let provider: PaymentProvider | null;
+  try {
+    provider = await configuredProvider(asServer);
+  } catch (error) {
+    console.error(error);
+    provider = null;
+  }
   if (!provider) return json({ error: 'payments_not_configured' }, 503);
 
   const { data: auth } = await asUser.auth.getUser(authorization.replace(/^Bearer\s+/i, ''));

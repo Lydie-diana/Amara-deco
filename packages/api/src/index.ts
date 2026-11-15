@@ -6,3 +6,4 @@ export type { CatalogProduct, CatalogService, CategoryRow, MerchantWithReview } 
 export * from './cart';
 export * from './sales';
 export * from './messages';
+export * from './paymentSettings';

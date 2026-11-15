@@ -49,15 +49,12 @@ Les apps lisent `.env.development` en local et `.env.production` pour les builds
 ## Paiement
 
 Le paiement passe par la fonction Supabase `payments` (`supabase/functions/payments`), qui utilise
-l'interface de `packages/payments`. Secrets de la fonction (jamais dans le code) :
+l'interface de `packages/payments`.
 
-| Secret                   | Dev    | Prod                     |
-| ------------------------ | ------ | ------------------------ |
-| `PAYMENT_PROVIDER`       | `mock` | `honelia`                |
-| `HONELIA_PAY_BASE_URL`   | —      | URL de l'API Honelia Pay |
-| `HONELIA_PAY_SECRET_KEY` | —      | clé secrète Honelia Pay  |
+Le prestataire et ses accès se règlent dans **Amara Admin, onglet « Paiement »** : prestataire,
+mode (essai ou réel), URL de l'API, clé publique, clé secrète et secret des notifications.
+Les clés secrètes sont chiffrées dans Supabase Vault ; l'écran peut les remplacer mais jamais
+les relire, et seule la fonction `payments` les lit. Sans réglage, la fonction refuse tout paiement.
 
-Le prestataire peut aussi être choisi par le réglage serveur `payment_provider` de la base
-(table `private.server_settings`, lisible par le serveur seulement) ; le secret a priorité.
-Sans l'un ni l'autre, la fonction refuse tout paiement. Le prestataire `mock` valide les
-paiements sans argent réel : il ne doit jamais être activé en prod.
+Le prestataire `mock` valide les paiements sans argent réel. Il n'est proposé que sur une base
+où le réglage serveur `allow_mock_payments` vaut `true` (dev uniquement, jamais en prod).
