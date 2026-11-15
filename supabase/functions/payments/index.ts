@@ -174,7 +174,13 @@ Deno.serve(async (req) => {
     auth: { persistSession: false },
   });
 
-  const provider = await configuredProvider(asServer);
+  let provider: PaymentProvider | null;
+  try {
+    provider = await configuredProvider(asServer);
+  } catch (error) {
+    console.error(error);
+    provider = null;
+  }
   if (!provider) return json({ error: 'payments_not_configured' }, 503);
 
   const { data: auth } = await asUser.auth.getUser(authorization.replace(/^Bearer\s+/i, ''));
