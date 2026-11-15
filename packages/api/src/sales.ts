@@ -495,8 +495,13 @@ export function useStartPayment() {
   const client = useAmaraClient();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (input: { kind: 'order' | 'booking'; id: string; payerPhone: string }) =>
-      invokePayments(need(client), { action: 'start', ...input }),
+    mutationFn: (input: {
+      kind: 'order' | 'booking';
+      id: string;
+      payerPhone: string;
+      /** Site web : page où revenir après la page de paiement hébergée. */
+      returnUrl?: string;
+    }) => invokePayments(need(client), { action: 'start', ...input }),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['orders'] });
       void qc.invalidateQueries({ queryKey: ['order'] });
@@ -510,8 +515,9 @@ export function useRefreshPayment() {
   const client = useAmaraClient();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (paymentId: string) =>
-      invokePayments(need(client), { action: 'refresh', paymentId }),
+    /** Paiement Amara, ou session du prestataire lue dans l'adresse de retour. */
+    mutationFn: (ref: { paymentId: string } | { sessionId: string }) =>
+      invokePayments(need(client), { action: 'refresh', ...ref }),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['order'] });
       void qc.invalidateQueries({ queryKey: ['booking'] });

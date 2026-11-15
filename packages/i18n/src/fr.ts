@@ -157,6 +157,7 @@ export const fr = {
     paying: 'Paiement en cours…',
     paymentPending: 'Validez le paiement sur votre téléphone, puis actualisez.',
     paymentRefresh: 'Actualiser',
+    paymentOpen: 'Ouvrir la page de paiement',
     paymentSucceeded: 'Paiement reçu. Merci !',
     paymentFailed: 'Le paiement n’a pas abouti. Vous pouvez réessayer.',
     paymentsUnavailable: 'Le paiement en ligne n’est pas encore ouvert.',
@@ -292,9 +293,9 @@ export const fr = {
     modes: { sandbox: 'Essai', live: 'Réel' },
     liveWarning: 'Mode réel : les clients seront vraiment débités.',
     baseUrl: 'Adresse de l’API',
-    baseUrlHint: 'https://…',
-    publicKey: 'Clé publique (si le prestataire en donne une)',
-    secretKey: 'Clé secrète',
+    baseUrlHint: 'https://…/api/v1',
+    publicKey: 'Clé publique (pk_…)',
+    secretKey: 'Clé secrète (sk_…)',
     webhookSecret: 'Secret des notifications (webhooks)',
     saved: 'Enregistrée',
     notSaved: 'Aucune',
@@ -306,8 +307,11 @@ export const fr = {
     updatedAt: 'Dernière modification : {{date}}',
     secretsNote:
       'Les clés secrètes sont chiffrées et ne s’affichent plus jamais, même ici. Seul le serveur de paiement les lit.',
+    webhookTitle: 'Adresse des notifications à déclarer chez Honelia (Développeurs › Webhooks)',
+    webhookEvents: 'Événements à cocher :',
     errors: {
-      missing_credentials: 'Honelia Pay demande l’adresse de l’API et la clé secrète.',
+      missing_credentials:
+        'Honelia Pay demande l’adresse de l’API, la clé publique et la clé secrète.',
       mock_not_allowed: 'Le prestataire de test est interdit sur cette base.',
       invalid_url: 'L’adresse doit commencer par https://',
       generic: 'L’enregistrement a échoué. Réessayez.',

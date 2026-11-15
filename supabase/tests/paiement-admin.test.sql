@@ -46,6 +46,10 @@ begin
     assert false, 'clé secrète exigée';
   exception when invalid_parameter_value then null; end;
   begin
+    perform public.admin_set_payment_settings('honelia', 'sandbox', 'https://api.honelia.test', ' ', 'sk_1');
+    assert false, 'clé publique exigée';
+  exception when invalid_parameter_value then null; end;
+  begin
     perform public.admin_set_payment_settings('mock', 'sandbox', null, null);
     assert false, 'prestataire de test interdit ici';
   exception when invalid_parameter_value then null; end;
