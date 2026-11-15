@@ -32,7 +32,7 @@ Deno.serve(async (req) => {
   if (!notice) return reply({ received: true });
 
   try {
-    // Le paiement direct n'a pas de compte utilisateur ici : seul le serveur lit la base.
+    // Une notification n'a pas de compte utilisateur : seul le serveur lit la base.
     const store = supabaseStore(asServer, asServer);
     const status = await reconcileProviderPayment({
       store,
