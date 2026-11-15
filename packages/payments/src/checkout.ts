@@ -45,11 +45,17 @@ export interface CheckoutStore {
     checkoutUrl: string | undefined,
   ): Promise<void>;
   loadPayment(paymentId: string): Promise<StoredPayment | null>;
+  /** Paiement connu par son identifiant chez le prestataire (pour les notifications). */
+  findByProviderPaymentId(
+    provider: string,
+    providerPaymentId: string,
+  ): Promise<{ id: string; status: PaymentStatus } | null>;
   /** Enregistre l'issue et fait avancer la commande ou la réservation (fonction de la base). */
   recordResult(paymentId: string, status: PaymentStatus): Promise<void>;
 }
 
-export type CheckoutErrorCode = 'not_found' | 'forbidden' | 'not_payable' | 'invalid_phone';
+export type CheckoutErrorCode =
+  'not_found' | 'forbidden' | 'not_payable' | 'invalid_phone' | 'invalid_return_url';
 
 export class CheckoutError extends Error {
   constructor(
@@ -76,6 +82,8 @@ export async function startCheckout(input: {
   kind: PayableKind;
   targetId: string;
   payerPhone: string;
+  /** Page du site où revenir après la page de paiement hébergée (https, ou localhost en essai). */
+  returnUrl?: string;
 }): Promise<CheckoutResult> {
   const { store, provider } = input;
   const target = await store.loadTarget(input.kind, input.targetId);
@@ -87,6 +95,9 @@ export async function startCheckout(input: {
   }
   if (!/^\+237[26]\d{8}$/.test(input.payerPhone)) {
     throw new CheckoutError('invalid_phone', 'Numéro de paiement invalide');
+  }
+  if (input.returnUrl !== undefined && !isAllowedReturnUrl(input.returnUrl)) {
+    throw new CheckoutError('invalid_return_url', 'Adresse de retour invalide');
   }
 
   // Une référence par tentative : un échec n'empêche pas de réessayer.
@@ -107,6 +118,7 @@ export async function startCheckout(input: {
     payerPhone: input.payerPhone,
     description:
       target.kind === 'order' ? `Commande ${target.reference}` : `Réservation ${target.reference}`,
+    ...(input.returnUrl ? { returnUrl: input.returnUrl } : {}),
   });
   await store.attachProviderPayment(paymentId, initiated.providerPaymentId, initiated.checkoutUrl);
 
@@ -123,9 +135,16 @@ export async function refreshCheckout(input: {
   store: CheckoutStore;
   provider: PaymentProvider;
   userId: string;
-  paymentId: string;
+  /** Paiement Amara, ou identifiant chez le prestataire (retour de la page hébergée). */
+  paymentId?: string;
+  providerPaymentId?: string;
 }): Promise<CheckoutResult> {
-  const payment = await input.store.loadPayment(input.paymentId);
+  const paymentId = input.paymentId
+    ? input.paymentId
+    : input.providerPaymentId
+      ? (await input.store.findByProviderPaymentId(input.provider.id, input.providerPaymentId))?.id
+      : undefined;
+  const payment = paymentId ? await input.store.loadPayment(paymentId) : null;
   if (!payment) throw new CheckoutError('not_found', 'Paiement introuvable');
   if (payment.payerId !== input.userId)
     throw new CheckoutError('forbidden', 'Paiement réservé au client');
@@ -138,6 +157,37 @@ export async function refreshCheckout(input: {
   }
   const status = await settle(input.store, input.provider, payment.id, payment.providerPaymentId);
   return { paymentId: payment.id, status };
+}
+
+/**
+ * Suite à une notification du prestataire : on ne croit pas son contenu, on redemande
+ * l'état au prestataire puis on l'enregistre. Rejouer la même notification est sans effet.
+ */
+export async function reconcileProviderPayment(input: {
+  store: CheckoutStore;
+  provider: PaymentProvider;
+  providerPaymentId: string;
+}): Promise<PaymentStatus | null> {
+  const payment = await input.store.findByProviderPaymentId(
+    input.provider.id,
+    input.providerPaymentId,
+  );
+  if (!payment) return null;
+  if (payment.status !== 'pending') return payment.status;
+  return settle(input.store, input.provider, payment.id, input.providerPaymentId);
+}
+
+function isAllowedReturnUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    if (value.length > 2000 || url.username || url.password) return false;
+    return (
+      url.protocol === 'https:' ||
+      (url.protocol === 'http:' && (url.hostname === 'localhost' || url.hostname === '127.0.0.1'))
+    );
+  } catch {
+    return false;
+  }
 }
 
 async function settle(

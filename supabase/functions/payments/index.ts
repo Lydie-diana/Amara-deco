@@ -2,144 +2,16 @@
 // Les montants viennent de la base, jamais de l'application. Les secrets du prestataire
 // (Honelia Pay) sont saisis par la super admin et lus ici depuis le coffre de la base.
 //
-// POST { action: "start", kind: "order" | "booking", id, payerPhone }
-// POST { action: "refresh", paymentId }
-import { createClient, type SupabaseClient } from 'npm:@supabase/supabase-js@2.119.0';
+// POST { action: "start", kind: "order" | "booking", id, payerPhone, returnUrl? }
+// POST { action: "refresh", paymentId } ou { action: "refresh", sessionId } (retour de la page
+//      de paiement hébergée, qui ajoute ?session_id=… à l'adresse de retour)
+import { createClient } from 'npm:@supabase/supabase-js@2.119.0';
 import {
   CheckoutError,
-  createHoneliaPayProvider,
-  createMockPaymentProvider,
   refreshCheckout,
   startCheckout,
-  type CheckoutStore,
-  type PaymentProvider,
 } from '../../../packages/payments/src/index.ts';
-
-const env = (name: string) => Deno.env.get(name) ?? '';
-
-/**
- * Prestataire choisi par la super admin dans Amara Admin (écran « Paiement »).
- * Les clés viennent du coffre de la base ; sans réglage, les paiements restent fermés.
- */
-async function configuredProvider(asServer: SupabaseClient): Promise<PaymentProvider | null> {
-  const { data, error } = await asServer.rpc('payment_runtime_config');
-  if (error) throw new Error(error.message);
-  const config = (data ?? {}) as Record<string, string | null>;
-  switch (config.provider) {
-    case 'honelia':
-      return createHoneliaPayProvider({
-        baseUrl: config.baseUrl ?? '',
-        secretKey: config.secretKey ?? '',
-        publicKey: config.publicKey ?? undefined,
-        webhookSecret: config.webhookSecret ?? undefined,
-        mode: config.mode === 'live' ? 'live' : 'sandbox',
-      });
-    case 'mock':
-      return createMockPaymentProvider();
-    default:
-      return null;
-  }
-}
-
-function supabaseStore(asUser: SupabaseClient, asServer: SupabaseClient): CheckoutStore {
-  const fail = (error: { message: string } | null) => {
-    if (error) throw new Error(error.message);
-  };
-  return {
-    async loadTarget(kind, id) {
-      if (kind === 'order') {
-        const { data, error } = await asUser
-          .from('orders')
-          .select('id, reference, buyer_id, status, subtotal_xaf')
-          .eq('id', id)
-          .maybeSingle();
-        fail(error);
-        return data
-          ? {
-              kind,
-              id: data.id,
-              reference: data.reference,
-              payerId: data.buyer_id,
-              status: data.status,
-              amountDueXaf: data.subtotal_xaf,
-            }
-          : null;
-      }
-      const { data, error } = await asUser
-        .from('bookings')
-        .select('id, reference, client_id, status, amount_due_xaf')
-        .eq('id', id)
-        .maybeSingle();
-      fail(error);
-      return data
-        ? {
-            kind,
-            id: data.id,
-            reference: data.reference,
-            payerId: data.client_id,
-            status: data.status,
-            amountDueXaf: data.amount_due_xaf,
-          }
-        : null;
-    },
-    async countAttempts(kind, id) {
-      const { count, error } = await asServer
-        .from('payments')
-        .select('id', { count: 'exact', head: true })
-        .eq(kind === 'order' ? 'order_id' : 'booking_id', id);
-      fail(error);
-      return count ?? 0;
-    },
-    async insertPayment(row) {
-      const { data, error } = await asServer
-        .from('payments')
-        .insert({
-          [row.kind === 'order' ? 'order_id' : 'booking_id']: row.targetId,
-          provider: row.provider,
-          reference: row.reference,
-          amount_xaf: row.amountXaf,
-          payer_phone: row.payerPhone,
-        })
-        .select('id')
-        .single();
-      fail(error);
-      return data!.id as string;
-    },
-    async attachProviderPayment(paymentId, providerPaymentId, checkoutUrl) {
-      const { error } = await asServer
-        .from('payments')
-        .update({ provider_payment_id: providerPaymentId, checkout_url: checkoutUrl ?? null })
-        .eq('id', paymentId);
-      fail(error);
-    },
-    async loadPayment(paymentId) {
-      const { data, error } = await asUser
-        .from('payments')
-        .select('id, provider, provider_payment_id, status, order_id, booking_id')
-        .eq('id', paymentId)
-        .maybeSingle();
-      fail(error);
-      if (!data) return null;
-      const target = data.order_id
-        ? await this.loadTarget('order', data.order_id)
-        : await this.loadTarget('booking', data.booking_id);
-      return {
-        id: data.id,
-        provider: data.provider,
-        providerPaymentId: data.provider_payment_id,
-        status: data.status,
-        payerId: target?.payerId ?? '',
-      };
-    },
-    async recordResult(paymentId, status) {
-      const { error } = await asServer.rpc('record_payment_result', {
-        p_payment_id: paymentId,
-        p_status: status,
-      });
-      fail(error);
-    },
-  };
-}
+import { env, providerOrNull, serverClient, supabaseStore } from '../_shared/payments.ts';
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -158,6 +30,7 @@ const HTTP_STATUS = {
   forbidden: 403,
   not_payable: 409,
   invalid_phone: 422,
+  invalid_return_url: 422,
 } as const;
 
 Deno.serve(async (req) => {
@@ -170,17 +43,9 @@ Deno.serve(async (req) => {
     global: { headers: { Authorization: authorization } },
     auth: { persistSession: false },
   });
-  const asServer = createClient(url, env('SUPABASE_SERVICE_ROLE_KEY'), {
-    auth: { persistSession: false },
-  });
+  const asServer = serverClient();
 
-  let provider: PaymentProvider | null;
-  try {
-    provider = await configuredProvider(asServer);
-  } catch (error) {
-    console.error(error);
-    provider = null;
-  }
+  const provider = await providerOrNull(asServer);
   if (!provider) return json({ error: 'payments_not_configured' }, 503);
 
   const { data: auth } = await asUser.auth.getUser(authorization.replace(/^Bearer\s+/i, ''));
@@ -204,6 +69,7 @@ Deno.serve(async (req) => {
           kind: body.kind,
           targetId: String(body.id ?? ''),
           payerPhone: String(body.payerPhone ?? ''),
+          ...(typeof body.returnUrl === 'string' ? { returnUrl: body.returnUrl } : {}),
         }),
       );
     }
@@ -213,7 +79,8 @@ Deno.serve(async (req) => {
           store,
           provider,
           userId: auth.user.id,
-          paymentId: String(body.paymentId ?? ''),
+          ...(typeof body.paymentId === 'string' ? { paymentId: body.paymentId } : {}),
+          ...(typeof body.sessionId === 'string' ? { providerPaymentId: body.sessionId } : {}),
         }),
       );
     }

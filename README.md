@@ -54,7 +54,16 @@ l'interface de `packages/payments`.
 Le prestataire et ses accès se règlent dans **Amara Admin, onglet « Paiement »** : prestataire,
 mode (essai ou réel), URL de l'API, clé publique, clé secrète et secret des notifications.
 Les clés secrètes sont chiffrées dans Supabase Vault ; l'écran peut les remplacer mais jamais
-les relire, et seule la fonction `payments` les lit. Sans réglage, la fonction refuse tout paiement.
+les relire, et seules les fonctions de paiement les lisent. Sans réglage, la fonction refuse tout paiement.
+
+**Honelia Pay** : Amara ouvre une page de paiement hébergée (`POST /checkout/sessions`) où le
+client choisit Orange Money, MTN MoMo… L'issue est confirmée par la fonction `payments-webhook`
+(notifications signées HMAC-SHA256, vérifiées avec le secret des notifications), qui redemande
+toujours l'état de la session à Honelia avant de l'enregistrer. Le retour du client sur le site
+(`?session_id=…`) déclenche aussi une vérification, jamais une validation directe.
+L'écran « Paiement » affiche l'adresse du webhook et les événements à déclarer chez Honelia.
+`payments-webhook` se déploie **sans vérification de jeton** (`verify_jwt = false`) : Honelia
+l'appelle sans compte Amara, seule la signature fait foi.
 
 Le prestataire `mock` valide les paiements sans argent réel. Il n'est proposé que sur une base
 où le réglage serveur `allow_mock_payments` vaut `true` (dev uniquement, jamais en prod).

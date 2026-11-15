@@ -6,6 +6,8 @@ import {
   startCheckout,
   type CheckoutStore,
   type PayableTarget,
+  reconcileProviderPayment,
+  type PaymentProvider,
   type PaymentStatus,
   type StoredPayment,
 } from './index.ts';
@@ -33,6 +35,10 @@ function memoryStore(target: PayableTarget) {
       payments.get(id)!.providerPaymentId = providerPaymentId;
     },
     loadPayment: async (id) => payments.get(id) ?? null,
+    findByProviderPaymentId: async (provider, providerPaymentId) =>
+      [...payments.values()].find(
+        (p) => p.provider === provider && p.providerPaymentId === providerPaymentId,
+      ) ?? null,
     recordResult: async (id, status) => {
       payments.get(id)!.status = status;
       recorded.push(status);
@@ -93,6 +99,8 @@ describe('startCheckout', () => {
     ['not_found', { targetId: 'autre' }],
     ['forbidden', { userId: 'u2' }],
     ['invalid_phone', { payerPhone: '0699000001' }],
+    ['invalid_return_url', { returnUrl: 'javascript:alert(1)' }],
+    ['invalid_return_url', { returnUrl: 'http://amara.cm/achats' }],
   ] as const)('refuse : %s', async (code, override) => {
     const { store } = memoryStore(order());
     const call = startCheckout({
@@ -144,5 +152,57 @@ describe('refreshCheckout', () => {
     ).rejects.toMatchObject({
       code: 'forbidden',
     });
+  });
+});
+
+/** Prestataire à page hébergée : en attente tant que le payeur n'a pas fini. */
+function hostedProvider() {
+  let status: PaymentStatus = 'pending';
+  const seen: { returnUrl?: string }[] = [];
+  const provider: PaymentProvider = {
+    id: 'hosted',
+    initiate: async (r) => {
+      seen.push({ returnUrl: r.returnUrl });
+      return { ...r, providerPaymentId: 'cs_1', status, checkoutUrl: 'https://pay.test/cs_1' };
+    },
+    getStatus: async (id) => ({ providerPaymentId: id, reference: '', amountXaf: 0, status }),
+  };
+  return { provider, seen, setStatus: (s: PaymentStatus) => (status = s) };
+}
+
+describe('reconcileProviderPayment', () => {
+  it('enregistre l’issue revérifiée, une seule fois', async () => {
+    const { store, recorded } = memoryStore(order());
+    const hosted = hostedProvider();
+    const started = await startCheckout({
+      store,
+      provider: hosted.provider,
+      userId: 'u1',
+      kind: 'order',
+      targetId: 'o1',
+      payerPhone: '+237699000001',
+      returnUrl: 'https://amara.cm/achats/commande/o1',
+    });
+    expect(started).toMatchObject({ status: 'pending', checkoutUrl: 'https://pay.test/cs_1' });
+    expect(hosted.seen[0]?.returnUrl).toBe('https://amara.cm/achats/commande/o1');
+
+    const reconcile = () =>
+      reconcileProviderPayment({ store, provider: hosted.provider, providerPaymentId: 'cs_1' });
+    await expect(reconcile()).resolves.toBe('pending');
+    await expect(
+      refreshCheckout({
+        store,
+        provider: hosted.provider,
+        userId: 'u1',
+        providerPaymentId: 'cs_1',
+      }),
+    ).resolves.toEqual({ paymentId: started.paymentId, status: 'pending' });
+    hosted.setStatus('succeeded');
+    await expect(reconcile()).resolves.toBe('succeeded');
+    await expect(reconcile()).resolves.toBe('succeeded');
+    expect(recorded).toEqual(['succeeded']);
+    await expect(
+      reconcileProviderPayment({ store, provider: hosted.provider, providerPaymentId: 'cs_x' }),
+    ).resolves.toBeNull();
   });
 });

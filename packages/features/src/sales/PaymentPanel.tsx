@@ -2,8 +2,8 @@ import { useSession, useStartPayment, useRefreshPayment, type PaymentResult } fr
 import { formatCameroonPhone, formatXaf, normalizeCameroonPhone } from '@amara/core';
 import { useTranslation } from '@amara/i18n';
 import { Button, colors, radius, space, Text, TextField } from '@amara/ui';
-import { useState } from 'react';
-import { View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Linking, Platform, View } from 'react-native';
 
 import { useSalesErrorMessage } from './errors';
 
@@ -11,6 +11,20 @@ export interface PaymentPanelProps {
   kind: 'order' | 'booking';
   id: string;
   amountXaf: number;
+}
+
+/** Site web : la page de paiement hébergée renvoie ici avec ?session_id=… */
+function webReturn(): { returnUrl?: string; sessionId?: string } {
+  if (Platform.OS !== 'web' || typeof window === 'undefined') return {};
+  const { origin, pathname, search } = window.location;
+  const sessionId = new URLSearchParams(search).get('session_id') ?? undefined;
+  return { returnUrl: `${origin}${pathname}`, sessionId };
+}
+
+/** Ouvre la page de paiement du prestataire (même onglet sur le web). */
+function openCheckout(url: string) {
+  if (Platform.OS === 'web' && typeof window !== 'undefined') window.location.assign(url);
+  else void Linking.openURL(url);
 }
 
 /** Paiement Mobile Money d'une commande ou d'une réservation, via la fonction serveur. */
@@ -24,12 +38,28 @@ export function PaymentPanel({ kind, id, amountXaf }: PaymentPanelProps) {
   const [result, setResult] = useState<PaymentResult | null>(null);
   const start = useStartPayment();
   const refresh = useRefreshPayment();
+  const { mutate: refreshMutate } = refresh;
+
+  // Retour de la page de paiement : on redemande l'état au serveur (jamais à l'adresse).
+  useEffect(() => {
+    const { sessionId } = webReturn();
+    if (sessionId) refreshMutate({ sessionId }, { onSuccess: setResult });
+  }, [refreshMutate]);
 
   const pay = () => {
     const payerPhone = normalizeCameroonPhone(phone);
     if (!payerPhone) return setPhoneError(t('invalidPhone'));
     setPhoneError(null);
-    start.mutate({ kind, id, payerPhone }, { onSuccess: setResult });
+    const { returnUrl } = webReturn();
+    start.mutate(
+      { kind, id, payerPhone, ...(returnUrl ? { returnUrl } : {}) },
+      {
+        onSuccess: (r) => {
+          setResult(r);
+          if (r.status === 'pending' && r.checkoutUrl) openCheckout(r.checkoutUrl);
+        },
+      },
+    );
   };
 
   return (
@@ -44,11 +74,16 @@ export function PaymentPanel({ kind, id, amountXaf }: PaymentPanelProps) {
       {result?.status === 'pending' ? (
         <>
           <Text accessibilityLiveRegion="polite">{t('paymentPending')}</Text>
+          {result.checkoutUrl ? (
+            <Button label={t('paymentOpen')} onPress={() => openCheckout(result.checkoutUrl!)} />
+          ) : null}
           <Button
             label={t('paymentRefresh')}
             variant="secondary"
             loading={refresh.isPending}
-            onPress={() => refresh.mutate(result.paymentId, { onSuccess: setResult })}
+            onPress={() =>
+              refresh.mutate({ paymentId: result.paymentId }, { onSuccess: setResult })
+            }
           />
         </>
       ) : (

@@ -7,9 +7,9 @@ import {
 } from '@amara/api';
 import { cardStyle, QueryState, Tabs } from '@amara/features';
 import { useTranslation } from '@amara/i18n';
-import { Button, colors, space, Text, TextField } from '@amara/ui';
+import { Button, colors, radius, space, Text, TextField } from '@amara/ui';
 import { useState, type ReactNode } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Platform, StyleSheet, View } from 'react-native';
 
 /** Écran « Paiement » : la super admin choisit le prestataire et saisit ses accès. */
 export function PaymentSettingsPanel() {
@@ -25,6 +25,15 @@ export function PaymentSettingsPanel() {
     </View>
   );
 }
+
+/** Adresse à déclarer chez le prestataire pour qu'il prévienne Amara de chaque paiement. */
+const WEBHOOK_URL = `${(process.env.EXPO_PUBLIC_SUPABASE_URL ?? '').replace(/\/+$/, '')}/functions/v1/payments-webhook`;
+const WEBHOOK_EVENTS = [
+  'checkout.completed',
+  'checkout.expired',
+  'payment.succeeded',
+  'payment.failed',
+];
 
 /** Une clé secrète : jamais relue, seulement remplacée (texte saisi) ou effacée (''). */
 type SecretDraft = string | undefined;
@@ -111,6 +120,18 @@ function SettingsForm({ settings }: { settings: PaymentSettings }) {
           <Text variant="caption" tone="muted">
             {t('secretsNote')}
           </Text>
+          <View style={styles.webhook}>
+            <Text variant="caption">{t('webhookTitle')}</Text>
+            <Text selectable style={styles.mono}>
+              {WEBHOOK_URL}
+            </Text>
+            <Text variant="caption" tone="muted">
+              {t('webhookEvents')}
+            </Text>
+            <Text selectable variant="caption" style={styles.mono}>
+              {WEBHOOK_EVENTS.join(', ')}
+            </Text>
+          </View>
         </>
       ) : null}
 
@@ -192,4 +213,13 @@ const styles = StyleSheet.create({
   card: { gap: space.lg, padding: space.lg, maxWidth: 640 },
   footer: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: space.md },
   secretActions: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
+  webhook: {
+    gap: space.xs,
+    padding: space.md,
+    borderRadius: radius.md,
+    backgroundColor: colors.sand,
+  },
+  mono: {
+    fontFamily: Platform.select({ ios: 'Menlo', android: 'monospace', default: 'monospace' }),
+  },
 });
