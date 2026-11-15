@@ -12,7 +12,20 @@
       "output": "single",
       "bundler": "metro"
     },
-    "plugins": ["expo-router", "expo-localization", "expo-font"],
+    "plugins": [
+      "expo-router",
+      "expo-localization",
+      "expo-font",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Amara Pro accède à vos photos et vidéos pour les publier dans votre Atelier.",
+          "cameraPermission": false,
+          "microphonePermission": false
+        }
+      ],
+      "expo-video"
+    ],
     "experiments": {
       "reactCompiler": true
     }

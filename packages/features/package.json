@@ -17,6 +17,7 @@
     "expo-localization": "*",
     "expo-router": "*",
     "expo-status-bar": "*",
+    "expo-video": "*",
     "react": "*",
     "react-native": "*"
   }

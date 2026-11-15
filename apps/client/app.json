@@ -12,7 +12,7 @@
       "output": "server",
       "bundler": "metro"
     },
-    "plugins": ["expo-router", "expo-localization", "expo-font"],
+    "plugins": ["expo-router", "expo-localization", "expo-font", "expo-video"],
     "experiments": {
       "reactCompiler": true
     }
