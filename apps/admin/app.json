@@ -1,0 +1,20 @@
+{
+  "expo": {
+    "name": "Amara Admin",
+    "slug": "amara-admin",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "scheme": "amaraadmin",
+    "userInterfaceStyle": "light",
+    "platforms": ["web"],
+    "backgroundColor": "#F6F1EA",
+    "web": {
+      "output": "single",
+      "bundler": "metro"
+    },
+    "plugins": ["expo-router", "expo-localization", "expo-font"],
+    "experiments": {
+      "reactCompiler": true
+    }
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "expo": {
+    "name": "Amara Pro",
+    "slug": "amara-pro",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "scheme": "amarapro",
+    "userInterfaceStyle": "light",
+    "platforms": ["ios", "android", "web"],
+    "backgroundColor": "#F6F1EA",
+    "web": {
+      "output": "single",
+      "bundler": "metro"
+    },
+    "plugins": ["expo-router", "expo-localization", "expo-font"],
+    "experiments": {
+      "reactCompiler": true
+    }
+  }
+}
